@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chronic Disease Assistant
 // @namespace    https://github.com/vBryx/chronic-disease-assistant
-// @version      0.2.0
+// @version      0.2.1
 // @description  Chronic disease screening, follow-up, care gaps, results and calculators for Raqeem
 // @homepageURL  https://github.com/vBryx/chronic-disease-assistant
 // @supportURL   https://github.com/vBryx/chronic-disease-assistant/issues
@@ -26,6 +26,7 @@
     dmLipidFollowupAnyAge: true,
     kidneyFollowupAllDiabetes: true,
     ckdScreenHeartDisease: true,
+    ckdEstablishedOnly: true,
     dmConfirmTwoStep: true,
     pregnancyEpisodes: true,
     fitValueRead: true,
@@ -380,7 +381,7 @@
     readAt: null,
     careprovider: null,
     log: [],
-    cda: '0.2.0',
+    cda: '0.2.1',
   };
 
   const OLD_SCRIPT_NOTE = 'Remove the old Raqeem Screening Assistant in Tampermonkey, then reload Raqeem.';
@@ -652,6 +653,8 @@
             active: d.isactive !== false,
 
             visituid: rec.patientvisituid && (rec.patientvisituid._id || rec.patientvisituid),
+
+            chronic: d.ischronicdiagnosis === true || rec.ischronicdiagnosis === true,
           });
         }
       }
@@ -980,7 +983,7 @@
     const t = normText(text).toLowerCase().replace(/\s+/g, '');
 
     if (/^(?:neg|notdetected|nonreactive|-ve)/.test(t)) return 'negative';
-    if (/^(?:pos|poitive|\+|detected|reactive)/.test(t)) return 'positive';
+    if (/^(?:pos|poitive|weakpo(?:s)?itive|\+|detected|reactive)/.test(t)) return 'positive';
 
     return null;
   }
@@ -1024,12 +1027,16 @@
     }
 
     if (key === 'fit') {
-      const fit = line ? fitResult(line.resultvalue) : null;
+      const fitLines = (labresult && labresult.resultvalues) || [];
+      const hit =
+        fitLines.find((l) => fitResult(l.resultvalue) === 'positive') ||
+        fitLines.find((l) => fitResult(l.resultvalue) === 'negative');
+      const fit = hit ? fitResult(hit.resultvalue) : null;
 
       return {
         check: !labresult ? 'unreadable' : fit ? 'valid' : 'invalid',
         value: null,
-        shown: fit ? normText(line.resultvalue) : null,
+        shown: fit ? normText(hit.resultvalue) : null,
         positive: fit === 'positive',
         bound: false,
         boundSymbol: '',
@@ -1788,9 +1795,17 @@
 
     const hasDM = !!renalDx;
 
-    const hasHTN = hasDx(CFG.icd.htn);
+    const establishedDx = (regex) => {
+      const rows = (diagnoses || []).filter((d) => d.active && regex.test(d.code));
+      const occasions = new Set(rows.map((d) => d.visituid || `day ${fmtDate(parseDate(d.codedAt))}`));
+      return rows.some((d) => d.chronic) || occasions.size >= 2;
+    };
 
-    const hasHeart = CFG.ckdScreenHeartDisease && hasDx(CFG.icd.heart);
+    const ckdGroupDx = CFG.ckdEstablishedOnly ? establishedDx : hasDx;
+
+    const hasHTN = ckdGroupDx(CFG.icd.htn);
+
+    const hasHeart = CFG.ckdScreenHeartDisease && ckdGroupDx(CFG.icd.heart);
 
     const hasDMorHTN = hasDM || hasHTN || hasHeart;
 
@@ -1837,7 +1852,9 @@
     } else if (!hasDMorHTN) {
       v.ckd = {
         state: 'excluded',
-        why: 'No diabetes, hypertension or heart disease',
+        why: CFG.ckdEstablishedOnly
+          ? 'No diabetes, and no hypertension or heart disease coded at 2 visits or marked chronic'
+          : 'No diabetes, hypertension or heart disease',
       };
     } else {
       v.ckd = standardScreening({
@@ -2379,7 +2396,10 @@
       'Programme rule (local choice, not guideline text)',
     ],
     crc: ['FIT yearly at age 45-75; colonoscopy is not visible in Raqeem (FIT only)', 'USPSTF 2021'],
-    ckd: ['ACR and creatinine yearly with hypertension or heart disease', 'KDIGO 2024 PP 1.1.1.1'],
+    ckd: [
+      'ACR and creatinine yearly with hypertension or heart disease coded at 2 visits or marked chronic',
+      'KDIGO 2024 PP 1.1.1.1',
+    ],
   };
 
   function buildCareGaps(demo, diagnoses, verdicts, medicines, vitals, labs, visits) {
@@ -2438,7 +2458,10 @@
             : screenAction[key],
         due: 'now',
         date: last || null,
-        rule: SCREEN_RULE[key][0],
+        rule:
+          key === 'ckd' && !CFG.ckdEstablishedOnly
+            ? 'ACR and creatinine yearly with hypertension or heart disease'
+            : SCREEN_RULE[key][0],
         src: SCREEN_RULE[key][1],
       });
     }
@@ -3049,7 +3072,7 @@
     );
   }
 
-  const cacheKey = (pid) => 'rqm-screen-v020:' + pid;
+  const cacheKey = (pid) => 'rqm-screen-v021:' + pid;
 
   function cacheGet(pid, key) {
     try {
@@ -3142,7 +3165,7 @@
         cursor:help;
       }
       .rqm-screening-cell:hover,.rqm-screening-cell:focus { box-shadow:inset 0 0 0 2px var(--rqm-accent); outline:0; }
-      .rqm-screening-icon { grid-area:icon; flex:none; width:26px; height:26px; border-radius:50%; background:var(--rqm-accent); color:#fff; display:flex; align-items:center; justify-content:center; font-style:normal; font-weight:800; }
+      .rqm-screening-icon { grid-area:icon; flex:none; width:18px; height:18px; border-radius:50%; background:var(--rqm-accent); color:#fff; display:flex; align-items:center; justify-content:center; font-style:normal; font-weight:800; font-size:11px; line-height:1; }
       .rqm-mode { grid-area:mode; justify-self:start; border-radius:3px; padding:0 5px; font-size:9.5px; font-weight:800; letter-spacing:.5px; line-height:15px; }
       .rqm-mode-screening { color:#164f7a; background:#fff; border:1px solid #b7cde0; }
       .rqm-mode-followup { color:#fff; background:#5a3d8a; border:1px solid #5a3d8a; }

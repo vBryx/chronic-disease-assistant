@@ -1,5 +1,13 @@
 # What changed
 
+## Version 0.2.1
+
+### Corrections
+
+- **Colon cancer:** the FIT result is now read correctly. A FIT report in Raqeem has several lines, and most of them are empty. Before this version, the Assistant could read an empty line and show **RESULT NOT VALID – REPEAT** although the report was negative or positive. The Assistant now reads every line of the report. A weak positive result counts as positive. The result is not valid only when no line shows a negative or positive result.
+- **CKD screening:** hypertension or heart disease now starts CKD screening only when the diagnosis was recorded at two or more visits, or is marked as chronic in Raqeem. A diagnosis recorded at one visit only, and not marked as chronic, no longer makes CKD screening due. Diabetes and coded CKD follow-up are unchanged.
+- **Strip:** the round status symbols in the strip are smaller.
+
 ## Version 0.2.0
 
 This is the first public version of **Chronic Disease Assistant**.

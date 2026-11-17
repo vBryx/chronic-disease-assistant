@@ -1,6 +1,6 @@
 # Clinical meanings
 
-This reference describes version 0.2.0. **Programme rule** means a local choice, not guideline text.
+This reference describes version 0.2.1. **Programme rule** means a local choice, not guideline text.
 
 ## Strip states
 
@@ -39,7 +39,7 @@ A missing or invalid test stays due even when another test cannot be read. An un
 - The result line must contain a usable number.
 - Bounds such as `<3.0` and values with units can count.
 - NA, blank, unavailable, and insufficient samples do not count.
-- FIT can be positive or negative.
+- FIT can be positive or negative. The Assistant reads every line of the FIT report. A weak positive counts as positive. A FIT with no negative or positive line is not valid.
 - The interval starts on the result date.
 - Values are not rounded on the strip.
 
@@ -86,8 +86,10 @@ The Assistant checks these situations in order:
 | Coded N18 at any age | **CKD follow-up** | ACR and serum creatinine at least yearly. ADA 2026, 11.1b |
 | Active E10–E14 at any age | **Kidney follow-up** | ACR and serum creatinine yearly. ADA 2026, 11.1a |
 | Under 18 without the above | **NOT ELIGIBLE** | Age below 18 |
-| Hypertension, heart disease, stroke, or heart failure | **CKD screening** | ACR and serum creatinine yearly. KDIGO 2024, PP 1.1.1.1 |
-| None of these | **NOT ELIGIBLE** | No diabetes, hypertension, or heart disease |
+| Hypertension, heart disease, stroke, or heart failure, recorded at two or more visits or marked as chronic in Raqeem | **CKD screening** | ACR and serum creatinine yearly. KDIGO 2024, PP 1.1.1.1 |
+| None of these | **NOT ELIGIBLE** | No diabetes, and no hypertension or heart disease coded at 2 visits or marked chronic |
+
+A hypertension or heart disease diagnosis recorded at one visit only, and not marked as chronic, does not start CKD screening. Other checks, such as the blood-pressure care gaps, still use that diagnosis.
 
 Only the albumin/creatinine ratio counts as ACR. Only serum creatinine counts. A separate eGFR order does not count. CKD screening has no screening code.
 
