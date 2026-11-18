@@ -16,12 +16,12 @@ Opening another patient closes **Details** and starts a new reading.
 
 ## Read the strip
 
-1. Check the tag on each cell.
+1. Read the cell name. It ends in **screening** or **follow-up**.
 2. Read the bold state.
-3. Read the latest result, date, or reason below it.
+3. Read the latest result, date, or reason below it. A long reason ends with **…**. Select the cell to read all of it.
 
-- **SCREENING** means the Assistant is checking whether screening is due.
-- **FOLLOW-UP** means a coded condition or current statin needs follow-up.
+- **Screening** means the Assistant is checking whether screening is due.
+- **Follow-up** means a coded condition or current statin needs follow-up.
 - Red means an action is due now.
 - Amber means an action is due soon or needs confirmation.
 - Green means screened or up to date.
@@ -96,14 +96,15 @@ Each graph uses the latest reading from each day, up to four days within three y
 
 ![Medicines tab](images/details-medicines.png)
 
-1. Review active medicines first.
-2. Check the dose and frequency.
-3. Check the last order date.
-4. Check the status.
+1. Find the group: **Diabetes**, **Blood pressure and heart**, **Lipids**, **Blood thinners**, **Thyroid**, or **Other**.
+2. Review the active medicines at the top of each group.
+3. Check the dose and frequency.
+4. Check the last order date.
+5. Check the status.
 
 The list can show **Active**, **Completed**, **Not current**, or a stopped status from Raqeem.
 
-**Expected result:** One row appears for each medicine-and-dose combination, with its latest available order date and status.
+**Expected result:** Each medicine appears once, with its most recent current order. If the same medicine has two active doses on the same day, both doses appear in the row. A group without medicines is not shown.
 
 ### Calculators
 
@@ -160,18 +161,6 @@ The Assistant checks diagnoses before adding. It checks again afterwards to conf
 **Expected result:** The Diagnosis list contains each code that Raqeem accepted. Any failed or unconfirmed code appears in a message.
 
 If the patient, visit, or department changes, the Assistant stops adding more codes.
-
-## Use a small screen
-
-1. Move sideways inside the strip to see all cells.
-2. Select **Details**.
-3. Move down through each stacked row.
-
-![Strip on a small screen](images/mobile-strip.png)
-
-![Care gaps on a small screen](images/mobile-care-gaps.png)
-
-**Expected result:** The Raqeem page stays within the screen. Only the strip moves sideways.
 
 ## Keyboard controls
 

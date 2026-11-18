@@ -1,6 +1,6 @@
 # Clinical meanings
 
-This reference describes version 0.2.1. **Programme rule** means a local choice, not guideline text.
+This reference describes version 0.2.3. **Programme rule** means a local choice, not guideline text.
 
 ## Strip states
 
@@ -18,7 +18,7 @@ This reference describes version 0.2.1. **Programme rule** means a local choice,
 | **NOT ELIGIBLE** | Grey | The patient is outside the pathway | Read the reason |
 | **LOADING…** | Light grey | The Assistant is reading Raqeem | Wait |
 
-**SCREENING** checks a patient without the relevant diagnosis. **FOLLOW-UP** checks a coded condition or current statin. Follow-up cells never offer screening codes.
+A cell name that ends in **screening** checks a patient without the relevant diagnosis. A cell name that ends in **follow-up** checks a coded condition or current statin. Follow-up cells never offer screening codes.
 
 For pathways with several tests, the order is:
 
@@ -180,6 +180,8 @@ A medicine is current when it is not stopped and one condition is true:
 - The order or start date is within 180 days.
 - Its end date is today or later.
 - It has no order or start date.
+
+The Medicines tab shows each medicine once. The row shows the most recent current order of that medicine, so it agrees with the care gaps. If no order is current, the row shows the most recent order. Different active doses ordered on the same day all appear in the row. Medicines are grouped by use: Diabetes, Blood pressure and heart, Lipids, Blood thinners, Thyroid, and Other. The groups only arrange the list. They do not change any screening or care gap.
 
 Medicine information supports statin, SGLT2 inhibitor, ACE inhibitor, ARB, metformin, NSAID, hypoglycaemia, PREVENT, and FRAX checks.
 

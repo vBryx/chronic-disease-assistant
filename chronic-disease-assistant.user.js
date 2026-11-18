@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chronic Disease Assistant
 // @namespace    https://github.com/vBryx/chronic-disease-assistant
-// @version      0.2.1
+// @version      0.2.3
 // @description  Chronic disease screening, follow-up, care gaps, results and calculators for Raqeem
 // @homepageURL  https://github.com/vBryx/chronic-disease-assistant
 // @supportURL   https://github.com/vBryx/chronic-disease-assistant/issues
@@ -27,6 +27,8 @@
     kidneyFollowupAllDiabetes: true,
     ckdScreenHeartDisease: true,
     ckdEstablishedOnly: true,
+    stripModeInTitle: true,
+    medGroups: true,
     dmConfirmTwoStep: true,
     pregnancyEpisodes: true,
     fitValueRead: true,
@@ -381,7 +383,7 @@
     readAt: null,
     careprovider: null,
     log: [],
-    cda: '0.2.1',
+    cda: '0.2.3',
   };
 
   const OLD_SCRIPT_NOTE = 'Remove the old Raqeem Screening Assistant in Tampermonkey, then reload Raqeem.';
@@ -3072,7 +3074,7 @@
     );
   }
 
-  const cacheKey = (pid) => 'rqm-screen-v021:' + pid;
+  const cacheKey = (pid) => 'rqm-screen-v023:' + pid;
 
   function cacheGet(pid, key) {
     try {
@@ -3135,7 +3137,7 @@
       }
       .rqm-screening-lead {
         min-width:126px;
-        padding:7px 12px;
+        padding:3px 12px;
         background:#eef3f8;
         border-right:1px solid #d3dce4;
         display:flex;
@@ -3148,7 +3150,7 @@
       .rqm-screening-cell {
         position:relative;
         min-width:0;
-        padding:7px 10px;
+        padding:3px 10px;
         border:0;
         border-left:4px solid var(--rqm-accent);
         border-right:1px solid #fff;
@@ -3157,22 +3159,18 @@
         text-align:left;
         display:grid;
         grid-template-columns:auto minmax(0,1fr);
-        grid-template-areas:"icon mode" "icon copy";
+        grid-template-areas:"icon copy";
         align-items:center;
         column-gap:8px;
-        row-gap:2px;
         color:#1f2933;
         cursor:help;
       }
       .rqm-screening-cell:hover,.rqm-screening-cell:focus { box-shadow:inset 0 0 0 2px var(--rqm-accent); outline:0; }
       .rqm-screening-icon { grid-area:icon; flex:none; width:18px; height:18px; border-radius:50%; background:var(--rqm-accent); color:#fff; display:flex; align-items:center; justify-content:center; font-style:normal; font-weight:800; font-size:11px; line-height:1; }
-      .rqm-mode { grid-area:mode; justify-self:start; border-radius:3px; padding:0 5px; font-size:9.5px; font-weight:800; letter-spacing:.5px; line-height:15px; }
-      .rqm-mode-screening { color:#164f7a; background:#fff; border:1px solid #b7cde0; }
-      .rqm-mode-followup { color:#fff; background:#5a3d8a; border:1px solid #5a3d8a; }
       .rqm-screening-copy { grid-area:copy; min-width:0; display:flex; flex-direction:column; }
-      .rqm-screening-copy b { font-size:13px; line-height:1.25; color:#14202b; }
-      .rqm-screening-state { color:var(--rqm-fg); font-size:12px; font-weight:800; }
-      .rqm-screening-note { color:#3b4752; font-size:11px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+      .rqm-screening-copy b { font-size:13px; line-height:1.25; color:#14202b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .rqm-screening-state { color:var(--rqm-fg); font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .rqm-screening-note { color:#3b4752; font-size:11px; line-height:1.3; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .rqm-screening-pop {
         position:absolute;
         top:calc(100% + 7px);
@@ -5920,14 +5918,68 @@
     });
   }
 
+  const DT_MED_GROUPS = [
+    [
+      'Diabetes',
+      ['metformin', 'sglt2i', 'glp1ra', 'sulfonylurea', 'insulin'],
+      /gliptin|januvia|galvus|trajenta|onglyza|pioglitazon|\bactos\b|acarbos|glucobay|repaglinid|novonorm|nateglinid|fiasp|basaglar|toujeo|tresiba|novorapid|novomix|humalog|humulin|apidra|levemir/i,
+    ],
+    [
+      'Blood pressure and heart',
+      ['acei', 'arb', 'arni', 'ccb', 'thiazide', 'betaBlocker', 'mra'],
+      /furosemid|lasix|torsemid|bumetanid|hydralazin|methyldop|doxazosin|prazosin|isosorbid|nitroglycer|ivabradin|digoxin|amiodaron|clonidin|trimetazidin|vastarel|ranolazin/i,
+    ],
+    [
+      'Lipids',
+      ['statin'],
+      /ezetimib|ezetrol|fenofibrat|lipanthyl|gemfibrozil|evolocumab|repatha|alirocumab|praluent|inclisiran|leqvio/i,
+    ],
+    [
+      'Blood thinners',
+      [],
+      /aspirin|acetylsalicyl|aspocid|jusprin|clopidogrel|plavix|ticagrelor|brilinta|prasugrel|warfarin|apixaban|eliquis|rivaroxaban|xarelto|dabigatran|pradaxa|edoxaban|enoxaparin|clexane|ecosprin|heparin/i,
+    ],
+    ['Thyroid', [], /levothyrox|thyroxin|euthyrox|eltroxin|carbimazol|mercazol|methimazol|propylthiouracil/i],
+  ];
+
+  const DT_MED_SKIN = /\b(cream|gel|ointment|lotion|topical)\b/i;
+
+  const dtMedGroup = (m) =>
+    (DT_MED_GROUPS.find(
+      ([, classes, re]) =>
+        classes.some((c) => medClass(m, c)) || (re.test(medText(m)) && !DT_MED_SKIN.test(medText(m))),
+    ) || [])[0] || 'Other';
+
   function dtMedicineRows(medicines) {
-    const byKey = new Map();
+    const t = (m) => parseDate(m.date) || 0;
+    const byName = new Map();
     for (const m of (medicines && medicines.items) || []) {
       const name = normText(m.name);
       if (!name) continue;
-      const k = `${name.toLowerCase()}|${normText(m.dose).toLowerCase()}`;
-      const had = byKey.get(k);
-      if (!had || (medStopped(had) && !medStopped(m))) byKey.set(k, m);
+      const k = name.toLowerCase();
+      if (!byName.has(k)) byName.set(k, []);
+      byName.get(k).push(m);
+    }
+    const day = (m) => (t(m) ? new Date(t(m)).setHours(0, 0, 0, 0) : 0);
+    const kind = (m) => (medStopped(m) ? 2 : /complet/i.test(m.status || '') ? 1 : 0);
+    const byKey = new Map();
+    for (const [k, orders] of byName) {
+      const current = orders.filter(currentMedicine);
+      const pool = current.length ? current : orders;
+      const best = pool.reduce((had, m) =>
+        day(m) > day(had) ||
+        (day(m) === day(had) && (kind(m) < kind(had) || (kind(m) === kind(had) && t(m) > t(had))))
+          ? m
+          : had,
+      );
+      const doses = [];
+      for (const m of pool
+        .filter((o) => day(o) === day(best) && kind(o) === kind(best))
+        .sort((a, b) => t(a) - t(b))) {
+        const dose = normText(m.dose);
+        if (dose && !doses.some((d) => d.toLowerCase() === dose.toLowerCase())) doses.push(dose);
+      }
+      byKey.set(k, doses.length ? { ...best, dose: doses.join('; ') } : best);
     }
     const state = (m) =>
       medStopped(m)
@@ -5937,8 +5989,7 @@
           : currentMedicine(m)
             ? 'Active'
             : 'Not current';
-    const rows = [...byKey.values()].map((m) => ({ ...m, state: state(m) }));
-    const t = (m) => parseDate(m.date) || 0;
+    const rows = [...byKey.values()].map((m) => ({ ...m, state: state(m), group: dtMedGroup(m) }));
     return [
       ...rows.filter((m) => m.state === 'Active').sort((a, b) => t(b) - t(a)),
       ...rows.filter((m) => m.state !== 'Active').sort((a, b) => t(b) - t(a)),
@@ -5967,24 +6018,29 @@
       }
       head.appendChild(headRow);
       table.appendChild(head);
-      const body = document.createElement('tbody');
-      for (const m of rows) {
-        const row = document.createElement('tr');
-        for (const [cls, label, text] of [
-          ['rqm-mn', '', m.name],
-          ['', 'Dose', m.dose || '—'],
-          ['', 'Last ordered', parseDate(m.date) ? dtDate(parseDate(m.date)) : 'Unknown date'],
-          [`rqm-mst ${m.state === 'Active' ? 'rqm-st-active' : 'rqm-st-other'}`, 'Status', m.state],
-        ]) {
-          const cell = document.createElement('td');
-          cell.className = cls;
-          if (label) cell.setAttribute('data-l', label);
-          cell.textContent = text;
-          row.appendChild(cell);
+      for (const group of [...DT_MED_GROUPS.map(([g]) => g), 'Other']) {
+        const list = rows.filter((m) => m.group === group);
+        if (!list.length) continue;
+        const body = document.createElement('tbody');
+        body.appendChild(dtGroupRow(group, 4));
+        for (const m of list) {
+          const row = document.createElement('tr');
+          for (const [cls, label, text] of [
+            ['rqm-mn', '', m.name],
+            ['', 'Dose', m.dose || '—'],
+            ['', 'Last ordered', parseDate(m.date) ? dtDate(parseDate(m.date)) : 'Unknown date'],
+            [`rqm-mst ${m.state === 'Active' ? 'rqm-st-active' : 'rqm-st-other'}`, 'Status', m.state],
+          ]) {
+            const cell = document.createElement('td');
+            cell.className = cls;
+            if (label) cell.setAttribute('data-l', label);
+            cell.textContent = text;
+            row.appendChild(cell);
+          }
+          body.appendChild(row);
         }
-        body.appendChild(row);
+        table.appendChild(body);
       }
-      table.appendChild(body);
       panel.appendChild(table);
     });
   }
@@ -6473,9 +6529,6 @@
       const icon = document.createElement('i');
       icon.className = 'rqm-screening-icon';
       icon.textContent = style.icon;
-      const mode = document.createElement('span');
-      mode.className = `rqm-mode rqm-mode-${followup ? 'followup' : 'screening'}`;
-      mode.textContent = followup ? 'FOLLOW-UP' : 'SCREENING';
       const copy = document.createElement('span');
       copy.className = 'rqm-screening-copy';
       const name = document.createElement('b');
@@ -6490,7 +6543,6 @@
       copy.appendChild(state);
       copy.appendChild(note);
       cell.appendChild(icon);
-      cell.appendChild(mode);
       cell.appendChild(copy);
 
       const pop = document.createElement('span');
@@ -6506,7 +6558,12 @@
       const popTitle = document.createElement('b');
       popTitle.textContent = `${itemName(key, res)} — ${stateLabel(res)}`;
       pop.appendChild(popTitle);
-      for (const text of detailLines(res)) {
+      const popLines = detailLines(res);
+      const popText = popLines.join(' ').toLowerCase();
+      if (note.textContent.split(' | ').some((part) => !popText.includes(part.trim().toLowerCase()))) {
+        popLines.unshift(note.textContent);
+      }
+      for (const text of popLines) {
         const line = document.createElement('span');
         line.textContent = text;
         pop.appendChild(line);

@@ -1,5 +1,16 @@
 # What changed
 
+## Version 0.2.3
+
+### Changes
+
+- **Strip:** the strip is shorter. Each item now uses one line for the name, one for the state, and one for the latest result or reason.
+- **Strip:** the small SCREENING and FOLLOW-UP labels are removed. The cell name already ends in "screening" or "follow-up".
+- **Strip:** a long reason ends with "…". Select the cell to read all of it, including the value and date.
+- **Medicines:** each medicine appears once, with its most recent current order. Before this version, a medicine could appear once for each dose.
+- **Medicines:** different doses ordered on the same day, such as a morning and a night insulin dose, appear together in the row.
+- **Medicines:** medicines are grouped like the results: Diabetes, Blood pressure and heart, Lipids, Blood thinners, Thyroid, and Other.
+
 ## Version 0.2.1
 
 ### Corrections
